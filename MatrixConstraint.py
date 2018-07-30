@@ -2,10 +2,10 @@
     File name: customParentConstraint.py
     Author: Wayne Moodie
     Date created: 7/30/2018
-    Date last modified: 4/22/20
+    Date last modified: 7/30/2018
     Python Version: 2.7
-    Todo List : Figure out adding in new drivers
-                Ui Build
+    Todo List : Ui Build
+                add solo axis
 '''
 
 from pymel.core import *
@@ -23,7 +23,7 @@ def lockNull(object):
         setAttr(object + '.r' + axis, k=False, l=True)
 
 
-def matrixConstarint(parent=False, point=False, orient=False, scale=False,
+def matrixConstraint(parent=False, point=False, orient=False, scale=False,
                      all=False, x=False, y=False, z=False):
     my_list = ls(sl=True)
     select(d=True)
@@ -69,17 +69,7 @@ def matrixConstarint(parent=False, point=False, orient=False, scale=False,
         decomp.outputTranslate >> my_list[-1].scale
     if parent:
         decomp.outputTranslate >> my_list[-1].translate
-        decomp.outputTranslate >> my_list[-1].rotate
+        decomp.outputRotate >> my_list[-1].rotate
 
 
-# Translate picker
-point = False
-tx, ty, tz = False, False, False
-transList = tx, ty, tz
 
-# Scale section      
-axisSel = 0
-for axis in scaleList:
-    if axis == True:
-        connectAttr(decompose + '.outputScale' + axisList[axisSel], driven + '.scale' + axisList[axisSel])
-        axisSel += 1
