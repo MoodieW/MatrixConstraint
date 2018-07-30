@@ -9,6 +9,24 @@
 '''
 
 from pymel.core import *
+from functools import wraps
+
+
+def undoFunc(func):
+    @wraps(func)
+    def funcWrapper(*args, **kwargs):
+        undoInfo(openChunk=True, chunkName=func.__name__)
+        try:
+            result = func(*args, **kwargs)
+            undoInfo(closeChunk=True)
+            return result
+        except:
+            undoInfo(closeChunk=True)
+            if undoInfo(query=True, undoName=True) == func.__name__:
+                undo()
+            raise  # this doesn't raise the exception
+    return funcWrapper
+
 
 
 def lockNull(object):
@@ -23,53 +41,104 @@ def lockNull(object):
         setAttr(object + '.r' + axis, k=False, l=True)
 
 
+
+@undoFunc
 def matrixConstraint(parent=False, point=False, orient=False, scale=False,
-                     all=False, x=False, y=False, z=False):
+                     all=False, x=False, y=False, z=False , maintainOffset = False):
+
+
     my_list = ls(sl=True)
     select(d=True)
+    # Error handling checks for selection and checks for a axes to constrain
+    if len(my_list) == 0 or len(my_list) == 1:
+        raise ValueError("Not enough object given to constrain. Please give driver(s) and driven objects in that order.")
 
-    if len(my_list) == 0:
-        raise ValueError("No object given to constrain. Please give driver(s) and driven objects in that order.")
+    bool = all, x, y, z
 
-    weight = 1.0 / len(my_list[:-1])
+    if True not in bool:
+        raise ValueError("No axes given to constrain. Please assign axes to constrain.")
 
-    tempStr = 'parent', 'point', 'orient', 'scale'
-    tempBool = parent, point, orient, scale
+    drivers = my_list[:-1]
+    driven  = my_list[-1]
+    weight = 1.0 / len(drivers)
+
+    tempStr = ['parent', 'point', 'orient', 'scale']
+    tempBool =[ parent, point, orient, scale]
     list = zip(tempBool, tempStr)
-
+    # starts passing our drivers matrices through the wtAddMatrix, MultMatrix, finally to the Decompose Matrix
     for attr in list:
         if attr[0]:
 
-            if objExists(my_list[-1] + '_' + attr[-1] + '_ConstraintSettings'):
-                delete(my_list[-1] + '_' + attr[-1] + '_ConstraintSettings')
+            if objExists(driven + '_' + attr[-1] + '_ConstraintSettings'):
+                delete(driven + '_' + attr[-1] + '_ConstraintSettings')
 
-            constraintCtrl = group(n=my_list[-1] + '_' + attr[-1] + '_ConstraintSettings')
-            constraintCtrl.setParent(my_list[-1])
+            constraintCtrl = group(n=driven + '_' + attr[-1] + '_ConstraintSettings')
+            constraintCtrl.setParent(driven)
             lockNull(constraintCtrl)
             select(d=True)
 
-            decomp = createNode('decomposeMatrix', n=my_list[-1] + '_' + attr[-1] + '_decompMatrix')
-            mult = createNode('multMatrix', n=my_list[-1] + '_' + attr[-1] + '_multMatrix')
-            wt = createNode('wtAddMatrix', n=my_list[-1] + '_' + attr[-1] + '_wtMatrix')
+            decomp = createNode('decomposeMatrix', n=driven + '_' + attr[-1] + '_decompMatrix')
+            mult = createNode('multMatrix', n=driven + '_' + attr[-1] + '_multMatrix')
+            wt = createNode('wtAddMatrix', n=driven + '_' + attr[-1] + '_wtMatrix')
 
-    for iter, transformNode in enumerate(my_list[:-1]):
-        transformNode.worldMatrix >> wt.wtMatrix[iter].matrixIn
+    # Sets up our constraint control under the driven object. It will always share equal influence between all drivers
+    # by default.
+    for iter, transformNode in enumerate(drivers):
+
+        if maintainOffset:
+            offset = driven.getMatrix() *transformNode.getMatrix().inverse()
+            offsetMult = createNode('multMatrix', n=transformNode + '_' + driven + '_offsetMultMatrix')
+            transformNode.worldMatrix >> offsetMult.matrixIn[0]
+            offsetMult.matrixIn[1].set(offset)
+            offsetMult.matrixSum >> wt.wtMatrix[iter].matrixIn
+
+        else:
+            transformNode.worldMatrix >> wt.wtMatrix[iter].matrixIn
+
         constraintCtrl.addAttr(transformNode + '_Weight', type='double', k=True, dv=weight)
         connectAttr(constraintCtrl + '.' + transformNode + '_Weight', wt.wtMatrix[iter].weightIn)
 
     wt.matrixSum >> mult.matrixIn[0]
     mult.matrixSum >> decomp.inputMatrix
-    my_list[-1].parentInverseMatrix >> mult.matrixIn[1]
+    driven.parentInverseMatrix >> mult.matrixIn[1]
 
+    axes      = 'XYZ'
+    axesBool  = [x,y,z]
+    axesCheck = zip(axesBool, axes)
+    # Plugs the constraint into the driven object based on Keyword arguments
     if point:
-        decomp.outputTranslate >> my_list[-1].translate
+        if all:
+            decomp.outputTranslate >> driven.translate
+        else:
+            for axis in axesCheck:
+                if axis[0]:
+                    connectAttr(decomp + '.outputTranslate' + axis[-1], driven+'.translate'+axis[-1])
+
     if orient:
-        decomp.outputTranslate >> my_list[-1].rotate
-    if orient:
-        decomp.outputTranslate >> my_list[-1].scale
+        if all:
+            decomp.outputRotate >> driven.rotate
+        else:
+            for axis in axesCheck:
+                if axis[0]:
+                    connectAttr(decomp + '.outputRotate' + axis[-1], driven+'.rotate'+axis[-1])
+
+    if scale:
+        if all:
+            decomp.outputScale >> driven.scale
+        else:
+            for axis in axesCheck:
+                if axis[0]:
+                    connectAttr(decomp + '.outputScale' + axis[-1], driven+'.scale'+axis[-1])
+
     if parent:
-        decomp.outputTranslate >> my_list[-1].translate
-        decomp.outputRotate >> my_list[-1].rotate
+        if all:
+            decomp.outputTranslate >> driven.translate
+            decomp.outputRotate >> driven.rotate
+        else:
+            for axis in axesCheck:
+                if axis[0]:
+                    connectAttr(decomp + '.outputTranslate' + axis[-1], driven+'.translate'+axis[-1])
+                    connectAttr(decomp + '.outputRotate' + axis[-1], driven + '.rotate' + axis[-1])
+if __name__ == "__main__":
 
-
-
+    matrixConstraint(orient=True, all=True, maintainOffset = True)
