@@ -43,7 +43,7 @@ def lockNull(object):
 
 
 @undoFunc
-def matrixConstraint(parent=False, point=False, orient=False, scale=False,
+def matrixConstraint(objects = None,  parent=False, point=False, orient=False, scale=False,
                      all=False, x=False, y=False, z=False , maintainOffset = False):
     """
     Creates a matrix based constraint network instead of Maya's default constraint system. Since we are using matrices
@@ -51,6 +51,7 @@ def matrixConstraint(parent=False, point=False, orient=False, scale=False,
     This was based on  Vasil Shotarov over at https://bindpose.com/maya-matrix-nodes-blending-matrices/.
     Special thanks to him for sharing the information.
 
+    :param objects: Give a list of objects to constrain. The final object in the list will be constrained to the formers
     :param parent: Mark True for parent style constraint
     :param point: Mark True for point style constraint
     :param orient: Mark True for Orient style constraint
@@ -64,10 +65,18 @@ def matrixConstraint(parent=False, point=False, orient=False, scale=False,
           I.E. matrixConstraint( 'cone1','cube1' parent=False, all =True)
     :return: Constraint settings node
     """
-    my_list = ls(sl=True)
+    # uses ls selection ,but will default to objects parameter if the parameter is not none
+    myList = ls(sl=True)
+
+    if objects is not None:
+        if isinstance(objects, list):
+            myList = [PyNode(i) for i in objects]
+        else:
+            raise ValueError("object parameter needs a LIST of transform nodes.")
+
     select(d=True)
     # Error handling checks for selection and checks for a axes to constrain
-    if len(my_list) == 0 or len(my_list) == 1:
+    if len(myList) == 0 or len(myList) == 1:
         raise ValueError("Not enough object given to constrain. Please give driver(s) and driven objects in that order.")
 
     bool = all, x, y, z
@@ -75,15 +84,15 @@ def matrixConstraint(parent=False, point=False, orient=False, scale=False,
     if True not in bool:
         raise ValueError("No axes given to constrain. Please assign axes to constrain.")
 
-    drivers = my_list[:-1]
-    driven  = my_list[-1]
+    drivers = myList[:-1]
+    driven  = myList[-1]
     weight = 1.0 / len(drivers)
 
     tempStr = ['parent', 'point', 'orient', 'scale']
     tempBool =[ parent, point, orient, scale]
-    list = zip(tempBool, tempStr)
+    attrList = zip(tempBool, tempStr)
     # starts passing our drivers matrices through the wtAddMatrix, MultMatrix, finally to the Decompose Matrix
-    for attr in list:
+    for attr in attrList:
         if attr[0]:
 
             if objExists(driven + '_' + attr[-1] + '_ConstraintSettings'):
@@ -249,5 +258,5 @@ def showUI():
 
 
 if __name__ == "__main__":
-    ui = showUI()
-    #matrixConstraint(parent=True, all=True)
+    #ui = showUI()
+    matrixConstraint(objects ='pCube1' ,parent=True, all=True, maintainOffset=True)
