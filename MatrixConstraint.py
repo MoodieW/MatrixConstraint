@@ -2,10 +2,9 @@
     File name: customParentConstraint.py
     Author: Wayne Moodie
     Date created: 7/30/2018
-    Date last modified: 7/30/2018
+    Date last modified: 8/02/2018
     Python Version: 2.7
-    Todo List : Ui Build
-                add solo axis
+    Todo List : Done for now
 '''
 
 from pymel.core import *
@@ -173,6 +172,7 @@ class MatrixConstraintUI(QtWidgets.QDialog):
         super(MatrixConstraintUI, self).__init__()
         self.setWindowTitle('Matrix Constraints')
         self.buildUI()
+        self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
 
 
     def buildUI(self):
@@ -341,7 +341,7 @@ class MatrixConstraintUI(QtWidgets.QDialog):
             self.scaleCheckY.setChecked(False)
             self.scaleCheckZ.setChecked(False)
     def scaleSoloAxis(self,toggle):
-        if bool(toggle,toggle):
+        if bool(toggle):
             self.scaleCheck.setChecked(False)
 
     def parentAll(self,toggle):
