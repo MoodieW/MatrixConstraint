@@ -168,14 +168,10 @@ def matrixConstraint(objects = None,  parent=False, point=False, orient=False, s
 
 class MatrixConstraintUI(QtWidgets.QDialog):
 
-    parent,point,orient,scale,mo, = False,False,False,False,False
-    tx,ty,tz,rx,ry,rz,sx,sy,sz = False,False,False,False,False,False,False,False,False
 
     def __init__(self):
         super(MatrixConstraintUI, self).__init__()
-
         self.setWindowTitle('Matrix Constraints')
-
         self.buildUI()
 
 
@@ -185,14 +181,14 @@ class MatrixConstraintUI(QtWidgets.QDialog):
 
         maintainOffsetLabel = QtWidgets.QLabel('Maintain Offset:')
         maintainOffsetLabel.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
-        maintainOffsetBtn = QtWidgets.QCheckBox()
+        self.maintainOffsetBtn = QtWidgets.QCheckBox()
         gridAx.addWidget(maintainOffsetLabel, 0, 0)
-        gridAx.addWidget(maintainOffsetBtn, 0, 1)
+        gridAx.addWidget(self.maintainOffsetBtn, 0, 1)
 
 
 
 
-        matrixLabel = QtWidgets.QLabel('Constraint Axes:')
+        matrixLabel = QtWidgets.QLabel('Matrix Constraint Axes')
         matrixLabel.setAlignment(QtCore.Qt.AlignRight| QtCore.Qt.AlignVCenter)
         gridAx.addWidget(matrixLabel, 1, 0)
 
@@ -209,9 +205,10 @@ class MatrixConstraintUI(QtWidgets.QDialog):
         gridAx.addWidget(self.parentCheckY, 3, 2)
         gridAx.addWidget(self.parentCheckZ, 3, 3)
         self.parentCheck.stateChanged.connect(self.parentAll)
-        self.parentCheckX.stateChanged.connect(self.parentX)
-        self.parentCheckX.stateChanged.connect(self.parentY)
-        self.parentCheckX.stateChanged.connect(self.parentZ)
+        self.parentCheckX.stateChanged.connect(self.parentSoloAxis)
+        self.parentCheckY.stateChanged.connect(self.parentSoloAxis)
+        self.parentCheckZ.stateChanged.connect(self.parentSoloAxis)
+
 
 
         pointLabel = QtWidgets.QLabel('Point Constraint:')
@@ -225,10 +222,12 @@ class MatrixConstraintUI(QtWidgets.QDialog):
         gridAx.addWidget(self.pointCheckX, 5, 1)
         gridAx.addWidget(self.pointCheckY, 5, 2)
         gridAx.addWidget(self.pointCheckZ, 5, 3)
+
         self.pointCheck.stateChanged.connect(self.translateAll)
-        self.pointCheckX.stateChanged.connect(self.translateX)
-        self.pointCheckX.stateChanged.connect(self.translateY)
-        self.pointCheckX.stateChanged.connect(self.translateZ)
+        self.pointCheckX.stateChanged.connect(self.translateSoloAxis)
+        self.pointCheckY.stateChanged.connect(self.translateSoloAxis)
+        self.pointCheckZ.stateChanged.connect(self.translateSoloAxis)
+
 
 
         orientLabel    = QtWidgets.QLabel('Orient Constraint:')
@@ -243,9 +242,10 @@ class MatrixConstraintUI(QtWidgets.QDialog):
         gridAx.addWidget(self.orientCheckY, 7, 2)
         gridAx.addWidget(self.orientCheckZ, 7, 3)
         self.orientCheck.stateChanged.connect(self.rotateAll)
-        self.orientCheckX.stateChanged.connect(self.rotateX)
-        self.orientCheckX.stateChanged.connect(self.rotateY)
-        self.orientCheckX.stateChanged.connect(self.rotateZ)
+        self.orientCheckX.stateChanged.connect(self.rotateSoloAxis)
+        self.orientCheckY.stateChanged.connect(self.rotateSoloAxis)
+        self.orientCheckZ.stateChanged.connect(self.rotateSoloAxis)
+
 
         scaleLabel     = QtWidgets.QLabel('Scale Constraint:')
         scaleLabel.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
@@ -260,9 +260,10 @@ class MatrixConstraintUI(QtWidgets.QDialog):
         gridAx.addWidget(self.scaleCheckY, 9, 2)
         gridAx.addWidget(self.scaleCheckZ, 9, 3)
         self.scaleCheck.stateChanged.connect(self.scaleAll)
-        self.scaleCheckX.stateChanged.connect(self.scaleX)
-        self.scaleCheckX.stateChanged.connect(self.scaleY)
-        self.scaleCheckX.stateChanged.connect(self.scaleZ)
+        self.scaleCheckX.stateChanged.connect(self.scaleSoloAxis)
+        self.scaleCheckY.stateChanged.connect(self.scaleSoloAxis)
+        self.scaleCheckZ.stateChanged.connect(self.scaleSoloAxis)
+
 
         pointBtn = QtWidgets.QPushButton('Point Matrix')
         parentBtn = QtWidgets.QPushButton('Parent Matrix')
@@ -274,105 +275,96 @@ class MatrixConstraintUI(QtWidgets.QDialog):
         gridAx.addWidget(orientBtn, 10, 2)
         gridAx.addWidget(scaleBtn, 10, 3)
         gridAx.addWidget(close, 11, 0,11,4)
-        pointBtn.clicked.connect(partial(matrixConstraint,
-                                         point=True,
-                                         x=MatrixConstraintUI.tx,
-                                         y=MatrixConstraintUI.ty,
-                                         z=MatrixConstraintUI.tz,
-                                         maintainOffset=MatrixConstraintUI.mo))
-        parentBtn.clicked.connect(partial(matrixConstraint,
-                                         parent=True,
-                                         x=MatrixConstraintUI.tx,
-                                         y=MatrixConstraintUI.ty,
-                                         z=MatrixConstraintUI.tz,
-                                         maintainOffset=MatrixConstraintUI.mo))
-        orientBtn.clicked.connect(partial(matrixConstraint,
-                                          parent=True,
-                                          x=MatrixConstraintUI.rx,
-                                          y=MatrixConstraintUI.ry,
-                                          z=MatrixConstraintUI.rz,
-                                          maintainOffset=MatrixConstraintUI.mo))
-        scaleBtn.clicked.connect(partial(matrixConstraint,
-                                         parent=True,
-                                         x=MatrixConstraintUI.sx,
-                                         y=MatrixConstraintUI.sy,
-                                         z=MatrixConstraintUI.sz,
-                                         maintainOffset=MatrixConstraintUI.mo))
+        pointBtn.clicked.connect(self.pointMat)
+        parentBtn.clicked.connect(self.parentMat)
+        orientBtn.clicked.connect(self.orientMat)
+        scaleBtn.clicked.connect(self.scaleMat)
         close.clicked.connect(self.close)
 
 
 
+    def parentMat(self):
+        all  = self.pointCheck.isChecked()
+        x = self.pointCheckX.isChecked()
+        y = self.pointCheckY.isChecked()
+        z = self.pointCheckZ.isChecked()
+        mo = self.maintainOffsetBtn.isChecked()
+        matrixConstraint(point = True, all = all, x=x, y=y,z=z,maintainOffset=mo)
 
-    def maintainOffset(self, toggle):
-        MatrixConstraintUI.mo = bool(toggle)
+    def pointMat(self):
+        all  = self.pointCheck.isChecked()
+        x = self.pointCheckX.isChecked()
+        y = self.pointCheckY.isChecked()
+        z = self.pointCheckZ.isChecked()
+        mo = self.maintainOffsetBtn.isChecked()
+        matrixConstraint(point = True, all = all, x=x, y=y,z=z,maintainOffset=mo)
 
+    def orientMat(self):
+        all  = self.orientCheck.isChecked()
+        x = self.orientCheckX.isChecked()
+        y = self.orientCheckY.isChecked()
+        z = self.orientCheckZ.isChecked()
+        mo = self.maintainOffsetBtn.isChecked()
+        matrixConstraint(orient = True, all = all, x=x, y=y,z=z,maintainOffset=mo)
 
-    def translateAll(self, toggle):
-        self.translateX(toggle)
-        self.translateY(toggle)
-        self.translateZ(toggle)
-        self.pointCheckY.setChecked(False)
-        self.pointCheckX.setChecked(False)
-        self.pointCheckZ.setChecked(False)
-
-    def translateX(self, toggle):
-        MatrixConstraintUI.tx = bool(toggle)
-    def translateY(self, toggle):
-        MatrixConstraintUI.ty = bool(toggle)
-    def translateZ(self, toggle):
-        MatrixConstraintUI.tz = bool(toggle)
-
-
-    def rotateAll(self, toggle):
-        self.rotateX(toggle)
-        self.rotateY(toggle)
-        self.rotateZ(toggle)
-        self.orientCheckX.setChecked(False)
-        self.orientCheckY.setChecked(False)
-        self.orientCheckZ.setChecked(False)
-
-    def rotateX(self, toggle):
-        MatrixConstraintUI.rx = bool(toggle)
-    def rotateY(self, toggle):
-        MatrixConstraintUI.ry = bool(toggle)
-    def rotateZ(self, toggle):
-        MatrixConstraintUI.rz = bool(toggle)
-
-    def scaleAll(self, toggle):
-        self.scaleX(toggle)
-        self.scaleY(toggle)
-        self.scaleZ(toggle)
-        self.scaleCheckX.setChecked(False)
-        self.scaleCheckY.setChecked(False)
-        self.scaleCheckZ.setChecked(False)
-
-    def scaleX(self, toggle):
-        MatrixConstraintUI.sx = bool(toggle)
-    def scaleY(self, toggle):
-        MatrixConstraintUI.sy = bool(toggle)
-    def scaleZ(self, toggle):
-        MatrixConstraintUI.sz = bool(toggle)
-        
-
-    def parentAll(self, toggle):
-        self.parentX(toggle)
-        self.parentY(toggle)
-        self.parentZ(toggle)
-        self.parentCheckX.setChecked(False)
-        self.parentCheckY.setChecked(False)
-        self.parentCheckZ.setChecked(False)
-
-    def parentX(self, toggle):
-        self.translateX(toggle)
-        self.rotateX(toggle)
-    def parentY(self, toggle):
-        self.translateY(toggle)
-        self.rotateY(toggle)
-    def parentZ(self, toggle):
-        self.translateZ(toggle)
-        self.rotateZ(toggle)
+    def scaleMat(self):
+        all  = self.scaleCheck.isChecked()
+        x = self.scaleCheckX.isChecked()
+        y = self.scaleCheckY.isChecked()
+        z = self.scaleCheckZ.isChecked()
+        mo = self.maintainOffsetBtn.isChecked()
+        matrixConstraint(scale = True, all = all, x=x, y=y,z=z, maintainOffset=mo)
 
 
+
+    def translateAll(self,toggle):
+        if bool(toggle):
+            self.pointCheckY.setChecked(False)
+            self.pointCheckX.setChecked(False)
+            self.pointCheckZ.setChecked(False)
+    def translateSoloAxis(self, toggle):
+        if bool(toggle):
+            self.pointCheck.setChecked(False)
+
+    def rotateAll(self,toggle):
+        if bool(toggle):
+            self.orientCheckX.setChecked(False)
+            self.orientCheckY.setChecked(False)
+            self.orientCheckZ.setChecked(False)
+    def rotateSoloAxis(self,toggle):
+        if bool(toggle):
+            self.orientCheck.setChecked(False)
+
+    def scaleAll(self,toggle):
+        if bool(toggle):
+            self.scaleCheckX.setChecked(False)
+            self.scaleCheckY.setChecked(False)
+            self.scaleCheckZ.setChecked(False)
+    def scaleSoloAxis(self,toggle):
+        if bool(toggle,toggle):
+            self.scaleCheck.setChecked(False)
+
+    def parentAll(self,toggle):
+        if bool(toggle):
+            self.parentCheckX.setChecked(False)
+            self.parentCheckY.setChecked(False)
+            self.parentCheckZ.setChecked(False)
+    def parentSoloAxis(self,toggle):
+        if bool(toggle):
+            self.parentCheck.setChecked(False)
+
+
+    def test(self):
+        print self.pointCheckX.isChecked() 
+        print self.pointCheckY.isChecked()
+        print self.pointCheckZ.isChecked()
+        print self.orientCheckX.isChecked()
+        print self.orientCheckY.isChecked()
+        print self.orientCheckZ.isChecked()
+        print self.scaleCheckX.isChecked()
+        print self.scaleCheckY.isChecked()
+        print self.scaleCheckZ.isChecked()
+        print self.maintainOffsetBtn.isChecked()
 
 
 def showUI():
