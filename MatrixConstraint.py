@@ -60,7 +60,7 @@ def matrixConstraint(objects = None,  parent=False, point=False, orient=False, s
     :param y: Mark True y axis to be constrained
     :param z: Mark True z axis to be constrained
     :param maintainOffset: Mark True to MaintainOffeset
-    :param args: Provide selection of only transform nodes. They can be strings or PyNodes
+    :param objects: Provide selection of only transform nodes. They can be strings or PyNodes
           I.E. matrixConstraint( 'cone1','cube1' parent=False, all =True)
     :return: Constraint settings node
     """
@@ -176,6 +176,12 @@ class MatrixConstraintUI(QtWidgets.QDialog):
 
 
     def buildUI(self):
+	
+		'''
+		Builds and assembles UI elements
+		
+		'''
+	
         gridAx = QtWidgets.QGridLayout(self)
 
 
@@ -282,8 +288,11 @@ class MatrixConstraintUI(QtWidgets.QDialog):
         close.clicked.connect(self.close)
 
 
-
+	'''
+	Builds Functions for each of the buttons Matrix Buttons
+	'''
     def parentMat(self):
+	
         all  = self.pointCheck.isChecked()
         x = self.pointCheckX.isChecked()
         y = self.pointCheckY.isChecked()
@@ -315,8 +324,10 @@ class MatrixConstraintUI(QtWidgets.QDialog):
         mo = self.maintainOffsetBtn.isChecked()
         matrixConstraint(scale = True, all = all, x=x, y=y,z=z, maintainOffset=mo)
 
-
-
+		
+	'''
+	If The "all" axes is checked it will de-Check the individual Axis and vice versa
+	'''
     def translateAll(self,toggle):
         if bool(toggle):
             self.pointCheckY.setChecked(False)
@@ -353,18 +364,6 @@ class MatrixConstraintUI(QtWidgets.QDialog):
         if bool(toggle):
             self.parentCheck.setChecked(False)
 
-
-    def test(self):
-        print self.pointCheckX.isChecked() 
-        print self.pointCheckY.isChecked()
-        print self.pointCheckZ.isChecked()
-        print self.orientCheckX.isChecked()
-        print self.orientCheckY.isChecked()
-        print self.orientCheckZ.isChecked()
-        print self.scaleCheckX.isChecked()
-        print self.scaleCheckY.isChecked()
-        print self.scaleCheckZ.isChecked()
-        print self.maintainOffsetBtn.isChecked()
 
 
 def showUI():
