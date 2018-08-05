@@ -9,6 +9,10 @@
 
 from pymel.core import *
 from functools import wraps, partial
+try:
+    from PyQt5 import QtWidgets, QtCore, QtGui
+except:
+    pass
 from MatrixConstraint.Qt import QtWidgets, QtCore, QtGui
 
 def undoFunc(func):
@@ -176,12 +180,12 @@ class MatrixConstraintUI(QtWidgets.QDialog):
 
 
     def buildUI(self):
-	
-		'''
-		Builds and assembles UI elements
-		
-		'''
-	
+
+        '''
+        Builds and assembles UI elements
+
+        '''
+
         gridAx = QtWidgets.QGridLayout(self)
 
 
@@ -288,11 +292,11 @@ class MatrixConstraintUI(QtWidgets.QDialog):
         close.clicked.connect(self.close)
 
 
-	'''
-	Builds Functions for each of the buttons Matrix Buttons
-	'''
+    '''
+    Builds Functions for each of the buttons Matrix Buttons
+    '''
     def parentMat(self):
-	
+
         all  = self.pointCheck.isChecked()
         x = self.pointCheckX.isChecked()
         y = self.pointCheckY.isChecked()
@@ -324,10 +328,10 @@ class MatrixConstraintUI(QtWidgets.QDialog):
         mo = self.maintainOffsetBtn.isChecked()
         matrixConstraint(scale = True, all = all, x=x, y=y,z=z, maintainOffset=mo)
 
-		
-	'''
-	If The "all" axes is checked it will de-Check the individual Axis and vice versa
-	'''
+
+    '''
+    If The "all" axes is checked it will de-Check the individual Axis and vice versa
+    '''
     def translateAll(self,toggle):
         if bool(toggle):
             self.pointCheckY.setChecked(False)
