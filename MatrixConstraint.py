@@ -297,12 +297,12 @@ class MatrixConstraintUI(QtWidgets.QDialog):
     '''
     def parentMat(self):
 
-        all  = self.pointCheck.isChecked()
-        x = self.pointCheckX.isChecked()
-        y = self.pointCheckY.isChecked()
-        z = self.pointCheckZ.isChecked()
+        all  = self.parentCheck.isChecked()
+        x = self.parentCheckX.isChecked()
+        y = self.parentCheckY.isChecked()
+        z = self.parentCheckZ.isChecked()
         mo = self.maintainOffsetBtn.isChecked()
-        matrixConstraint(point = True, all = all, x=x, y=y,z=z,maintainOffset=mo)
+        matrixConstraint(parent = True, all = all, x=x, y=y,z=z,maintainOffset=mo)
 
     def pointMat(self):
         all  = self.pointCheck.isChecked()
